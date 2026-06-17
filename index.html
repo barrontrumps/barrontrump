@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>CoinNewList • Cryptocurrency Live Price</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            margin: 20px;
+        }
+        nav {
+            margin-bottom: 20px;
+        }
+        nav a {
+            margin: 0 10px;
+            text-decoration: none;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .crypto-logo {
+            width: 20px;
+            vertical-align: middle;
+            margin-right: 5px;
+        }
+        .container {
+            max-width: 100%;
+            padding: 10px;
+        }
+        #content {
+            min-height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <h2><img src="https://cryptologos.cc/logos/bitcoin-btc-logo.png" class="crypto-logo" style="width:24px;"> CoinNewList</h2>
+    
+    <nav>
+        <a href="#1" class="nav-link">All Crypto</a>
+        <a href="#newlist" class="nav-link">NewList</a>
+        <a href="#trending" class="nav-link">Trending</a>
+        <a href="#news" class="nav-link">News</a>
+    </nav>
+    
+    <div class="container">
+        <div id="content">Loading...</div>
+    </div>
+    
+    <script>
+        // Hash-based routing system
+        async function loadPage(hash) {
+            const contentDiv = document.getElementById('content');
+            
+            // Determine which page file to load
+            let pageFile = 'pages/ranking.html'; // default
+            
+            if (!isNaN(hash) && hash !== '') {
+                pageFile = `pages/ranking.html`;
+            } else if (hash === 'newlist') {
+                pageFile = 'pages/newlist.html';
+            } else if (hash === 'trending') {
+                pageFile = 'pages/trending.html';
+            } else if (hash === 'news') {
+                pageFile = 'pages/news.html';
+            }
+            
+            try {
+                const response = await fetch(pageFile);
+                if (!response.ok) throw new Error('Page not found');
+                const html = await response.text();
+                
+                // Parse HTML to extract components
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Extract styles and add to head
+                doc.querySelectorAll('style').forEach(style => {
+                    const styleId = 'style_' + Math.random().toString(36);
+                    style.id = styleId;
+                    // Only add if not already present
+                    if (!document.getElementById(styleId)) {
+                        document.head.appendChild(style.cloneNode(true));
+                    }
+                });
+                
+                // Extract body content (excluding scripts and styles)
+                const bodyContent = doc.body.innerHTML;
+                
+                // Clean up old scripts to prevent conflicts
+                if (window.rankingPageCleanup) {
+                    window.rankingPageCleanup();
+                }
+                
+                contentDiv.innerHTML = bodyContent;
+                
+                // Execute scripts
+                const scripts = doc.querySelectorAll('script');
+                scripts.forEach(script => {
+                    eval(script.textContent);
+                });
+                
+                // Load specific page if ranking
+                if (!isNaN(hash) && hash !== '') {
+                    const pageNum = parseInt(hash, 10);
+                    if (window.loadRankingPage) {
+                        window.loadRankingPage(pageNum);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading page:', error);
+                contentDiv.innerHTML = '<p>Error loading page. Please try again.</p>';
+            }
+        }
+        
+        function handleHashChange() {
+            const hash = window.location.hash.slice(1) || '1';
+            loadPage(hash);
+        }
+        
+        window.addEventListener('hashchange', handleHashChange);
+        window.onload = () => {
+            handleHashChange();
+        };
+    </script>
+</body>
+</html>
